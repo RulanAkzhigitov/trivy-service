@@ -1,1 +1,84 @@
-
+# components/trivy/trivy-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivy
+  namespace: harbor-system
+  labels:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trivy
+  template:
+    metadata:
+      labels:
+        app: trivy
+    spec:
+      containers:
+      - name: trivy
+        image: aquasec/trivy:0.50.0
+        command: ["trivy"]
+        args:
+        - "server"
+        - "--listen"
+        - "0.0.0.0:8080"
+        - "--cache-dir"
+        - "/var/lib/trivy"
+        - "--token"
+        - "$(TRIVY_TOKEN)"
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: TRIVY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: harbor-secrets
+              key: trivy-token
+        volumeMounts:
+        - name: trivy-cache
+          mountPath: /var/lib/trivy
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: trivy-cache
+        persistentVolumeClaim:
+          claimName: trivy-cache-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trivy-cache-pvc
+  namespace: harbor-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trivy
+  namespace: harbor-system
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: trivy
