@@ -1,0 +1,73 @@
+# gateway-api/harbor-gateway.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: harbor-gateway
+  namespace: harbor-system
+spec:
+  gatewayClassName: envoy-gateway
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: harbor-route
+  namespace: harbor-system
+spec:
+  parentRefs:
+  - name: harbor-gateway
+    namespace: harbor-system
+  hostnames:
+  - "harbor.k8s.home"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: harbor-portal
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minio-route
+  namespace: harbor-system
+spec:
+  parentRefs:
+  - name: harbor-gateway
+  hostnames:
+  - "minio.k8s.home"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: minio
+      port: 9001
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rabbitmq-route
+  namespace: harbor-system
+spec:
+  parentRefs:
+  - name: harbor-gateway
+  hostnames:
+  - "rabbitmq.k8s.home"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: rabbitmq
+      port: 15672
