@@ -1,0 +1,24 @@
+# applications/rabbitmq.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rabbitmq
+  namespace: argocd
+spec:
+  destination:
+    server: https://10.28.99.189:7443
+    namespace: harbor-system
+  source:
+    path: components/rabbitmq
+    repoURL: https://github.com/YOUR_USER/harbor-scanning-system.git
+    targetRevision: HEAD
+    helm:
+      releaseName: rabbitmq
+      valueFiles:
+        - rabbitmq-values.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
