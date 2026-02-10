@@ -1,0 +1,55 @@
+# components/scanner/scanner-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harbor-scanner
+  namespace: harbor-system
+  labels:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harbor-scanner
+  template:
+    metadata:
+      labels:
+        app: harbor-scanner
+    spec:
+      containers:
+      - name: scanner
+        image: your-registry/harbor-scanner:latest
+        env:
+        - name: HARBOR_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: harbor-secrets
+              key: harbor-admin-password
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: harbor-secrets
+              key: rabbitmq-password
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: harbor-secrets
+              key: redis-password
+        - name: TRIVY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: harbor-secrets
+              key: trivy-token
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/scanner
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: logs
+        emptyDir: {}
