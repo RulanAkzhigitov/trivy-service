@@ -1,0 +1,26 @@
+# components/rabbitmq/rabbitmq-values.yaml
+auth:
+  existingPasswordSecret: harbor-secrets
+  existingErlangSecret: harbor-secrets
+
+replicaCount: 3
+persistence:
+  enabled: true
+  storageClass: longhorn
+  size: 2Gi
+
+extraPlugins: |
+  rabbitmq_peer_discovery_k8s
+  rabbitmq_prometheus
+  rabbitmq_web_dispatch
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 512Mi
+    cpu: 250m
+
+service:
+  type: ClusterIP
