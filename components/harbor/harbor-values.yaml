@@ -1,0 +1,70 @@
+# components/harbor/harbor-values.yaml
+expose:
+  type: clusterIP
+  tls:
+    enabled: false
+
+externalURL: http://harbor.k8s.home
+
+harborAdminPasswordFromSecret: 
+  secretKey: harbor-admin-password
+  secretName: harbor-secrets
+
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      size: 5Gi
+      storageClass: longhorn
+    chartmuseum:
+      size: 5Gi
+      storageClass: longhorn
+      enabled: false
+    jobservice:
+      size: 1Gi
+      storageClass: longhorn
+    database:
+      size: 1Gi
+      storageClass: longhorn
+    redis:
+      size: 1Gi
+      storageClass: longhorn
+    trivy:
+      size: 5Gi
+      storageClass: longhorn
+  imageChartStorage:
+    type: s3
+    s3:
+      region: us-east-1
+      bucket: harbor-registry
+      accesskeyFromSecret:
+        secretKey: minio-root-user
+        secretName: harbor-secrets
+      secretkeyFromSecret:
+        secretKey: minio-root-password
+        secretName: harbor-secrets
+      regionendpoint: http://minio.harbor-system.svc.cluster.local:9000
+      secure: false
+
+trivy:
+  enabled: false  # Отключаем встроенный Trivy
+
+redis:
+  type: external
+  external:
+    addr: "redis.harbor-system.svc.cluster.local:6379"
+    passwordFromSecret:
+      secretKey: redis-password
+      secretName: harbor-secrets
+
+database:
+  type: external
+  external:
+    host: "postgresql.harbor-system.svc.cluster.local"
+    port: "5432"
+    username: "postgres"
+    passwordFromSecret:
+      secretKey: postgres-password
+      secretName: harbor-secrets
+    sslmode: "disable"
